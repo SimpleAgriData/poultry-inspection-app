@@ -1,0 +1,33 @@
+{
+	"name": "siad-stallkarte-frontend",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"dev": "next dev",
+		"build": "next build",
+		"start": "next start",
+		"lint": "biome check --error-on-warnings",
+		"typecheck": "tsc --noEmit",
+		"format": "biome check --write"
+	},
+	"dependencies": {
+		"keycloak-js": "26.2.3",
+		"next": "16.2.1",
+		"react": "19.2.4",
+		"react-dom": "19.2.4",
+		"react-icons": "5.6.0",
+		"zod": "4.3.6"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.9",
+		"@tailwindcss/postcss": "4.2.2",
+		"@types/node": "25",
+		"@types/react": "19",
+		"@types/react-dom": "19",
+		"babel-plugin-react-compiler": "1.0.0",
+		"clsx": "^2.1.1",
+		"postcss": "8.5.8",
+		"tailwindcss": "4.2.2",
+		"typescript": "6"
+	}
+}

@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:18.0-trixie
+    container_name: local-siad-stallkarte-backend-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: siad
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: siad_stallkarte_dev
+    volumes:
+      - postgres-data:/var/lib/postgresql/18/docker
+
+  backend:
+    build:
+      context: backend # where docker compose looks
+      dockerfile: Dockerfile
+      args:
+        - version="(version unknown)"
+        - gitVersion="(git version unknown)"
+    container_name: backend
+    image: siad_stallkarte_backend:latest
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    environment:
+      PYTHONUNBUFFERED: 1
+      KEYCLOAK_URL: https://auth.simple-agri-data.de
+      KEYCLOAK_REALM: SimpleAgriData
+      KEYCLOAK_CLIENT_ID: stallkarte
+      DATABASE_URL: postgresql://siad:secret@postgres:5432/siad_stallkarte_dev
+    restart: unless-stopped
+
+  frontend:
+    build:
+      args:
+        - NEXT_PUBLIC_API_ENDPOINT=http://localhost:8000/
+        - NEXT_PUBLIC_KEYCLOAK_URL=https://auth.simple-agri-data.de/
+        - NEXT_PUBLIC_KEYCLOAK_REALM=SimpleAgriData
+        - NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=stallkarte
+      context: frontend # where docker compose looks, alt: .
+      dockerfile: Dockerfile # alt: frontend/Dockerfile
+    container_name: frontend
+    image: siad_stallkarte_frontend:latest
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+    driver: local

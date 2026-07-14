@@ -4,3 +4,12 @@
 </p>
 
 ## Description (WIP)
+
+
+## Run
+
+```bash
+docker compose -f local.docker-compose.yaml up --build
+```
+
+Available at: [http://localhost:3000/](http://localhost:3000/)

@@ -1,0 +1,17 @@
+:root {
+	--transparency-start: 0px;
+	--transparency-end: 15px;
+}
+
+.scroll-transparency-wrapper {
+	mask-image: linear-gradient(
+		to right,
+		transparent,
+		transparent var(--transparency-start),
+		black var(--transparency-end),
+		black calc(100% - var(--transparency-end)),
+		transparent calc(100% - var(--transparency-start)),
+		transparent
+	);
+	padding: 0 var(--transparency-end);
+}
