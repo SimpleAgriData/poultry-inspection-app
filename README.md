@@ -3,7 +3,8 @@
   <h1>SimpleAgriData - Poultry Inspection App (ehem. Stallkarten App)</h1>
 </p>
 
-## Description (WIP)
+## Beschreibung
+Open-Source-App zur digitalen Durchgangsdokumentation in der Hähnchenmast. Sie ermöglicht die Erfassung und Verwaltung von Protokollgängen und wurde im Rahmen des Forschungsprojekts SimpleAgriData an der Hochschule Karlsruhe entwickelt.
 
 
 ## Run
@@ -12,4 +13,4 @@
 docker compose -f local.docker-compose.yaml up --build
 ```
 
-Available at: [http://localhost:3000/](http://localhost:3000/)
+Verfügbarkeit: [http://localhost:3000/](http://localhost:3000/)
