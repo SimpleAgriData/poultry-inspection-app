@@ -9,6 +9,7 @@ from app.api.v1.commands import (
     update_agricultural_holding_router,
     update_farm_router,
     update_section_router,
+    import_stallkarte_router,
 )
 from app.api.v1.commands.stallkarte import (
     apply_pest_control_measures_router,
@@ -82,6 +83,7 @@ commands_router.include_router(update_farm_router)
 commands_router.include_router(update_section_router)
 commands_router.include_router(delete_farm_router)
 commands_router.include_router(delete_section_router)
+commands_router.include_router(import_stallkarte_router)
 commands_router.include_router(
     stallkarte_router, prefix="/stallkarte", tags=["Stallkarte"]
 )

@@ -108,9 +108,11 @@ class StallkarteProductionDayMapping(BaseModel):
 
 
 class StallkarteProductionDaysMapping(BaseModel):
+    date: str
     day: str
     natural_mortality: str
     selective_mortality: str
+    cumulative_mortality: str
     weight: str
     did_inspection_1: str
     did_inspection_2: str
@@ -126,9 +128,11 @@ class StallkarteProductionDaysMapping(BaseModel):
 
 
 default_stallkarte_production_days_mapping = StallkarteProductionDaysMapping(
+    date="A",
     day="B",
     natural_mortality="C",
     selective_mortality="D",
+    cumulative_mortality="F",
     weight="H",
     did_inspection_1="I",
     did_inspection_2="J",
@@ -223,6 +227,7 @@ class ThroughputReportFinishNotesMapping(BaseModel):
     slaughter_date_column: str
     slaughter_animals_count_column: str
     slaughter_slaughterer_column: str
+    catching_date_cells: tuple[str, str, str]
     catching_catcher_cells: tuple[str, str, str]
     catching_time_cells: tuple[str, str, str]
 
@@ -232,6 +237,7 @@ default_throughput_report_finish_notes_mapping = ThroughputReportFinishNotesMapp
     slaughter_date_column="B",
     slaughter_animals_count_column="C",
     slaughter_slaughterer_column="E",
+    catching_date_cells=("B37", "C37", "D37"),
     catching_catcher_cells=("B38", "C38", "D38"),
     catching_time_cells=("B39", "C39", "D39"),
 )
@@ -251,6 +257,8 @@ class ThroughputReportGeneralNotesMapping(BaseModel):
     treatment_start_date_column: str
     treatment_end_date_column: str
     treatment_waiting_time_column: str
+    sock_test_result: YesNoMapping
+    sock_test_date: str
 
 
 default_throughput_report_general_notes_mapping = ThroughputReportGeneralNotesMapping(
@@ -267,6 +275,8 @@ default_throughput_report_general_notes_mapping = ThroughputReportGeneralNotesMa
     treatment_start_date_column="E",
     treatment_end_date_column="F",
     treatment_waiting_time_column="G",
+    sock_test_result= YesNoMapping(yes="C34", no="C35"),
+    sock_test_date= "D33"
 )
 
 

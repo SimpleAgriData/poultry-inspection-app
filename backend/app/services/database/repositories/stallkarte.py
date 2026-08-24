@@ -11,19 +11,19 @@ from app.services.database.repositories.repository import Repository
 
 
 class StallkarteRepository(Repository):
-    def create_stallkarte(self, holding_id: int) -> domain.Stallkarte:
+    def create_stallkarte(self, holding_id: int, commit: bool = True) -> domain.Stallkarte:
         db_stallkarte = models.Stallkarte(
             holding_id=holding_id,
         )
-        self._add(db_stallkarte)
+        self._add(db_stallkarte, commit=commit)
 
         return translate.stallkarte_to_domain(db_stallkarte)
 
-    def add_event(self, stallkarte_id: int, event: domain.StallkarteEvent) -> None:
-        self.add_events(stallkarte_id, [event])
+    def add_event(self, stallkarte_id: int, event: domain.StallkarteEvent, commit: bool = True) -> None:
+        self.add_events(stallkarte_id, [event], commit=commit)
 
     def add_events(
-        self, stallkarte_id: int, events_to_add: list[domain.StallkarteEvent]
+        self, stallkarte_id: int, events_to_add: list[domain.StallkarteEvent], commit: bool = True
     ) -> None:
         db_events: list[models.StallkarteEvent] = []
         for event in events_to_add:
@@ -36,7 +36,8 @@ class StallkarteRepository(Repository):
                 )
             )
         self.session.add_all(db_events)
-        self.session.commit()
+        if commit:
+            self.session.commit()
 
     def get_stallkarte_by_id(self, stallkarte_id: int) -> domain.Stallkarte | None:
         statement = (
@@ -57,7 +58,7 @@ class StallkarteRepository(Repository):
 
         return translate.stallkarte_to_domain(db_stallkarte)
 
-    def mark_finished(self, stallkarte_id: int) -> None:
+    def mark_finished(self, stallkarte_id: int, commit: bool = True) -> None:
         statement = select(models.Stallkarte).where(
             models.Stallkarte.id == stallkarte_id,
         )
@@ -67,7 +68,7 @@ class StallkarteRepository(Repository):
             raise ValueError(f"stallkarte with ID '{stallkarte_id}' not found")
 
         db_stallkarte.is_finished = True
-        self._add(db_stallkarte)
+        self._add(db_stallkarte, commit=commit)
 
     def mark_reopened(self, stallkarte_id: int) -> None:
         statement = select(models.Stallkarte).where(

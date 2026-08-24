@@ -75,6 +75,17 @@ To format the code, run:
 make format
 ```
 
+### Run the importer locally for testing 
+
+You can import a workbook directly into the database without starting the API.
+Holding and Farms matching the Workbook need to be present in the DB for this to work.
+
+```bash
+uv run python import_stallkarte.py <path-to-workbook.xlsx> --holding-id <id> 
+```
+
+If you want to override the configured database URL, add `--database-url <url>`.
+
 ## Build with Docker
 
 ```bash

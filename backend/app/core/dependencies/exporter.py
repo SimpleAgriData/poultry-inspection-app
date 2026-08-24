@@ -2,7 +2,7 @@ from fastapi import Depends
 
 from app.core.config import StallkarteConfig
 from app.core.dependencies import settings
-from app.core.stallkarteexport import Exporter
+from app.core.stallkarte_export_import import Exporter
 
 
 def exporter(

@@ -13,7 +13,7 @@ from openpyxl.styles import Font
 from openpyxl.worksheet.worksheet import Worksheet
 
 from app import domain
-from app.core.stallkarteexport.exporter import (
+from app.core.stallkarte_export_import.exporter import (
     StallkarteWorksheetExporter,
     build_sheet_sum_formula,
     copy_outdoor_journal_row_style,
@@ -31,7 +31,7 @@ from app.core.stallkarteexport.exporter import (
     optional_sum,
     shift_merged_ranges_down,
 )
-from app.core.stallkarteexport.mapping import (
+from app.core.stallkarte_export_import.mapping import (
     YesNoMapping,
     default_stallkarte_checklist_mapping,
     default_stallkarte_holding_mapping,

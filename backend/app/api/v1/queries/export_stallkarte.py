@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 
 from app import domain
 from app.core import dependencies
-from app.core.stallkarteexport import Exporter
+from app.core.stallkarte_export_import import Exporter
 from app.services.database import Database
 
 router = APIRouter()
