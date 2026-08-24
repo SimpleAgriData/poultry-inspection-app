@@ -797,9 +797,9 @@ export interface components {
         /** @enum {string} */
         ApiTreatmentAmountUnit: "l/1000" | "g/1000" | "ml" | "mg" | "l" | "kg";
         /** @enum {string} */
-        ApiTreatmentCode: "amproline" | "pyanosid" | "lincospectin" | "phenoxypen_wsp" | "baytril" | "lanflox";
+        ApiTreatmentCode: "amproline" | "pyanosid" | "lincospectin" | "phenoxypen_wsp" | "baytril" | "lanflox" | "amoxicillin" | "aviapen" | "baycox" | "biocillin" | "dozuril" | "enro_sleecol" | "enroxal" | "neomycinsulfat" | "octacillin" | "parofor" | "pharmasin" | "rhemox_forte" | "solomocta" | "t_s_sol" | "toltra_k";
         /** @enum {string} */
-        ApiVaccinationCode: "nd" | "gumboro" | "ib";
+        ApiVaccinationCode: "nd" | "gumboro" | "ib" | "kokzidien";
         /** @enum {string} */
         ApiWaitingTimeUnit: "day" | "week";
         /**
@@ -1215,12 +1215,12 @@ export interface components {
          * TreatmentCode
          * @enum {string}
          */
-        TreatmentCode: "amproline" | "pyanosid" | "lincospectin" | "phenoxypen_wsp" | "baytril" | "lanflox";
+        TreatmentCode: "amproline" | "pyanosid" | "lincospectin" | "phenoxypen_wsp" | "baytril" | "lanflox" | "amoxicillin" | "aviapen" | "baycox" | "biocillin" | "dozuril" | "enro_sleecol" | "enroxal" | "neomycinsulfat" | "octacillin" | "parofor" | "pharmasin" | "rhemox_forte" | "solomocta" | "t_s_sol" | "toltra_k";
         /**
          * VaccinationCode
          * @enum {string}
          */
-        VaccinationCode: "nd" | "gumboro" | "ib";
+        VaccinationCode: "nd" | "gumboro" | "ib" | "kokzidien";
         /** ValidationError */
         ValidationError: {
             /** Location */

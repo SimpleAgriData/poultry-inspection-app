@@ -12,14 +12,29 @@ type NoteType =
 	| "catching";
 type GeneralNoteType = Exclude<NoteType, "slaughter" | "catching">;
 type FinishNoteType = Extract<NoteType, "slaughter" | "catching">;
-type VaccinationCode = "nd" | "gumboro" | "ib";
+type VaccinationCode = "nd" | "gumboro" | "ib" | "kokzidien";
 type TreatmentCode =
 	| "amproline"
 	| "pyanosid"
 	| "lincospectin"
 	| "phenoxypen_wsp"
 	| "baytril"
-	| "lanflox";
+	| "lanflox"
+	| "amoxicillin"
+	| "aviapen"
+	| "baycox"
+	| "biocillin"
+	| "dozuril"
+	|  "enro_sleecol"
+	|  "enroxal"
+	| "neomycinsulfat"
+	| "octacillin"
+	| "parofor"
+	| "pharmasin"
+	| "rhemox_forte"
+	| "solomocta"
+	| "t_s_sol"
+	| "toltra_k";
 type TreatmentAmountUnit = "l/1000" | "g/1000" | "ml" | "mg" | "l" | "kg";
 type WaitingTimeUnit = "day" | "week";
 type SockTestResult = "positive" | "negative";

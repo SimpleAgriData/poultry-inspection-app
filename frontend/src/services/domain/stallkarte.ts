@@ -51,7 +51,7 @@ const GENERAL_NOTE_TYPES = [
 ] as const;
 const FINISH_NOTE_TYPES = ["slaughter", "catching"] as const;
 
-const VACCINATION_CODES = ["nd", "gumboro", "ib"] as const;
+const VACCINATION_CODES = ["nd", "gumboro", "ib", "kokzidien"] as const;
 const TREATMENT_CODES = [
 	"amproline",
 	"pyanosid",
@@ -59,6 +59,21 @@ const TREATMENT_CODES = [
 	"phenoxypen_wsp",
 	"baytril",
 	"lanflox",
+	"amoxicillin",
+	"aviapen",
+	"baycox",
+	"biocillin",
+	"dozuril",
+	"enro_sleecol",
+	"enroxal",
+	"neomycinsulfat",
+	"octacillin",
+	"parofor",
+	"pharmasin",
+	"rhemox_forte",
+	"solomocta",
+	"t_s_sol",
+	"toltra_k",
 ] as const;
 const TREATMENT_AMOUNT_UNITS = ["l/1000", "g/1000", "ml", "mg", "l", "kg"] as const;
 const WAITING_TIME_UNITS = ["day", "week"] as const;
