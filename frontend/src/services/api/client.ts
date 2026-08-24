@@ -102,9 +102,25 @@ class ApiClient {
 	async runCommand<TPath extends keyof paths, TRequestBody extends RequestBody<TPath>>(
 		url: TPath,
 		requestBody: TRequestBody,
-		{ signal }: CommandOptions,
+		options: CommandOptions,
 	): Promise<SuccessCommand<TPath>> {
-		return this.http.runCommand<SuccessCommand<TPath>, TRequestBody>(
+		const response = await this.runCommandRaw(url, requestBody, options);
+
+		const data = await response.json();
+
+		if (!response.ok) {
+			throw new Error(data.error?.message ?? "Command failed");
+		}
+
+		return data as SuccessCommand<TPath>;
+	}
+
+	async runCommandRaw< TPath extends keyof paths, TRequestBody extends RequestBody<TPath>,>(
+		url: TPath,
+		requestBody: TRequestBody,
+		{ signal }: CommandOptions,
+	): Promise<Response> {
+		return this.http.runCommandRaw<TRequestBody>(
 			`${this.baseUrl}${url}`,
 			true,
 			requestBody,

@@ -1,4 +1,4 @@
-import type { ApiClient } from "@/services/api/client";
+import type { ApiClient, RequestBody } from "@/services/api/client";
 import type { StallkarteCommand, StallkarteCommands } from "@/services/api/stallkarte/commands";
 import { requestBodyMapping } from "@/services/api/stallkarte/mapping";
 import {
@@ -50,6 +50,16 @@ class StallkarteService {
 			signal,
 		});
 		return response.blob();
+	}
+
+	async importStallkarte(upload: FormData, signal: AbortSignal | null = null,): Promise<Response> {
+		return this.client.runCommandRaw(
+			"/api/v1/import-stallkarte",
+			upload as unknown as RequestBody<"/api/v1/import-stallkarte">,
+			{
+				signal,
+			},
+		);
 	}
 
 	async runCommand<T extends StallkarteCommand>(
