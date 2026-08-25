@@ -275,8 +275,8 @@ default_throughput_report_general_notes_mapping = ThroughputReportGeneralNotesMa
     treatment_start_date_column="E",
     treatment_end_date_column="F",
     treatment_waiting_time_column="G",
-    sock_test_result= YesNoMapping(yes="C34", no="C35"),
-    sock_test_date= "D33"
+    sock_test_result=YesNoMapping(yes="C34", no="C35"),
+    sock_test_date="D33",
 )
 
 

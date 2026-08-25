@@ -11,7 +11,9 @@ from app.services.database.repositories.repository import Repository
 
 
 class StallkarteRepository(Repository):
-    def create_stallkarte(self, holding_id: int, commit: bool = True) -> domain.Stallkarte:
+    def create_stallkarte(
+        self, holding_id: int, commit: bool = True
+    ) -> domain.Stallkarte:
         db_stallkarte = models.Stallkarte(
             holding_id=holding_id,
         )
@@ -19,11 +21,16 @@ class StallkarteRepository(Repository):
 
         return translate.stallkarte_to_domain(db_stallkarte)
 
-    def add_event(self, stallkarte_id: int, event: domain.StallkarteEvent, commit: bool = True) -> None:
+    def add_event(
+        self, stallkarte_id: int, event: domain.StallkarteEvent, commit: bool = True
+    ) -> None:
         self.add_events(stallkarte_id, [event], commit=commit)
 
     def add_events(
-        self, stallkarte_id: int, events_to_add: list[domain.StallkarteEvent], commit: bool = True
+        self,
+        stallkarte_id: int,
+        events_to_add: list[domain.StallkarteEvent],
+        commit: bool = True,
     ) -> None:
         db_events: list[models.StallkarteEvent] = []
         for event in events_to_add:

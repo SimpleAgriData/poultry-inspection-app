@@ -58,6 +58,7 @@ class TreatmentCode(StrEnum):
     T_S_SOL = "t_s_sol"
     TOLTRA_K = "toltra_k"
 
+
 class WaitingTimeUnit(StrEnum):
     DAY = "day"
     WEEK = "week"

@@ -13,7 +13,7 @@ class Repository(abc.ABC):
     def _add(self, instance: object, commit: bool = True) -> None:
         self.session.add(instance)
         self.session.flush()
-        
+
         if commit:
             self.session.commit()
             self.session.refresh(instance)

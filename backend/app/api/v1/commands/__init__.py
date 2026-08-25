@@ -14,8 +14,8 @@ __all__ = [
     "add_section_router",
     "delete_farm_router",
     "delete_section_router",
+    "import_stallkarte_router",
     "update_agricultural_holding_router",
     "update_farm_router",
     "update_section_router",
-    "import_stallkarte_router",
 ]

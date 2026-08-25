@@ -111,7 +111,9 @@ def _parse_general_note_fragment(fragment: str) -> list[models.NoteEntry]:
         return []
 
     if "+" in fragment:
-        parts = [part.strip() for part in re.split(r"\s*\+\s*", fragment) if part.strip()]
+        parts = [
+            part.strip() for part in re.split(r"\s*\+\s*", fragment) if part.strip()
+        ]
         if len(parts) > 1:
             notes: list[models.NoteEntry] = []
             for part in parts:
@@ -368,8 +370,7 @@ def _normalize_treatment_fragment(fragment: str) -> str:
         rf"(?i)\b(?P<value>\d+(?:[.,]\d+)?)\s*(?P<unit>l|g)\s+(?P<name>(?:{code_union}))\b(?P<suffix>/1000)?",
         lambda m: (
             f"{m.group('value')} {m.group('unit')}/1000 {m.group('name')}"
-            if m.group("suffix") is not None
-            or m.group("unit").lower() in {"l", "g"}
+            if m.group("suffix") is not None or m.group("unit").lower() in {"l", "g"}
             else m.group(0)
         ),
         fragment,
@@ -447,7 +448,9 @@ def _extract_treatment_code_and_text(
 def extract_treatment_amount_and_text(
     fragment: str,
 ) -> tuple[float | None, models.TreatmentAmountUnit | None, str | None]:
-    pattern = r"(?P<value>\d+(?:[.,]\d+)?)\s*(?P<unit>l\s*/\s*1000|g\s*/\s*1000|ml|mg|kg|l)\b"
+    pattern = (
+        r"(?P<value>\d+(?:[.,]\d+)?)\s*(?P<unit>l\s*/\s*1000|g\s*/\s*1000|ml|mg|kg|l)\b"
+    )
 
     match = re.search(pattern, fragment, flags=re.IGNORECASE)
 

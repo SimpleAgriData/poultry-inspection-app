@@ -25,7 +25,10 @@ from app.core.stallkarte_export_import.mapping import (
     default_outdoor_journal_days_mapping as mp_outdoor_journal_days,
     default_throughput_report_general_notes_mapping as mp_throughput_general_notes,
 )
-from app.core.stallkarte_export_import.note_parser import parse_general_notes,extract_treatment_amount_and_text
+from app.core.stallkarte_export_import.note_parser import (
+    parse_general_notes,
+    extract_treatment_amount_and_text,
+)
 from app.domain.stallkarte.stallkarte import Stallkarte
 from app.domain.stallkarte.apply import StallkarteAggregator
 from app.services.database import Database
@@ -41,13 +44,12 @@ from app.core.stallkarte_export_import.errors import StallkarteImportError
 
 
 class Importer:
-
-    def __init__(self,  source: str | Path | BinaryIO) -> None:
+    def __init__(self, source: str | Path | BinaryIO) -> None:
         self.workbook: Workbook = openpyxl.load_workbook(
             source,
             data_only=True,
         )
-        
+
         self.daily_event_rows: list[int] = []
         self.excepetion_only_one_farm: bool = False
         self.throughput_report: Worksheet
@@ -55,8 +57,6 @@ class Importer:
         self.outdoor_journal: Worksheet
         self.section_sheet_names: list[str]
 
-
-    
     def import_stallkarte(
         self,
         holding: domain.AgriculturalHolding,
@@ -76,14 +76,18 @@ class Importer:
         self.outdoor_journal = self._worksheet(
             default_export_worksheet_names.outdoor_journal_name
         )
-        date_started: datetime.date = self._read_required_date(self.first_section_ws, mp_production_days.date + str(mp_production_days.start_row), "date_started")
+        date_started: datetime.date = self._read_required_date(
+            self.first_section_ws,
+            mp_production_days.date + str(mp_production_days.start_row),
+            "date_started",
+        )
         self.daily_event_rows = self._build_daily_event_rows(date_started)
 
         start_payload = self._read_start_payload(self.throughput_report, date_started)
 
-        
-
-        stallkarte = db.stallkarte_repository.create_stallkarte(holding.id,commit=False)
+        stallkarte = db.stallkarte_repository.create_stallkarte(
+            holding.id, commit=False
+        )
 
         start_events = stallkarte.start_stallkarte(
             date_started=start_payload.date_started,
@@ -98,15 +102,17 @@ class Importer:
         self._persist_events(db, stallkarte, start_events)
         StallkarteAggregator.apply_to(stallkarte, holding.farms, start_events)
 
-        farm_assignment_events = self._read_farm_assignment_events(holding, db, stallkarte)
+        farm_assignment_events = self._read_farm_assignment_events(
+            holding, db, stallkarte
+        )
         self._persist_events(db, stallkarte, farm_assignment_events)
         StallkarteAggregator.apply_to(stallkarte, holding.farms, farm_assignment_events)
 
         installation_detail_events = self._read_installation_detail_events(stallkarte)
         self._persist_events(db, stallkarte, installation_detail_events)
         StallkarteAggregator.apply_to(
-                    stallkarte, holding.farms, installation_detail_events
-                )
+            stallkarte, holding.farms, installation_detail_events
+        )
 
         transfer_events = self._read_transfer_events(stallkarte)
         self._persist_events(db, stallkarte, transfer_events)
@@ -153,7 +159,8 @@ class Importer:
             raise StallkarteImportError(
                 code="missing_sheets",
                 message="Invalid workbook structure. Missing required sheets.",
-                german_display_message="Der Importer konnte die folgenden Arbeitsblätter nicht finden: " + ", ".join(missing_sheet_names),
+                german_display_message="Der Importer konnte die folgenden Arbeitsblätter nicht finden: "
+                + ", ".join(missing_sheet_names),
             )
 
     def _get_section_sheet_names(self) -> list[str]:
@@ -243,19 +250,16 @@ class Importer:
                             (item for item in holding.farms if item.id == farm_id), None
                         )
 
-            # Ensure all parsed sections exist in the DB and are associated with this farm
             for section in self._get_section_sheet_names():
                 section_number = int(self._parse_section_number(section))
                 add_section_to_farm(section_number, farm)
 
             return farm
 
-        def add_section_to_farm(section_number: int, farm: domain.Farm):
-            # Ensure farm.sections is a list of domain.Section objects
+        def add_section_to_farm(section_number: int, farm: domain.Farm) -> None:
             if not hasattr(farm, "sections") or farm.sections is None:
                 farm.sections = []
 
-            # If farm already has this section, do nothing
             for existing in farm.sections:
                 try:
                     if str(getattr(existing, "name", "")) == str(section_number):
@@ -263,8 +267,6 @@ class Importer:
                 except Exception:
                     continue
 
-            # Try to add the section in the repository. If it returns a section-like object,
-            # attach that; otherwise fall back to creating a domain.Section locally.
             try:
                 created = db.section_repository.add_section(
                     farm.id, SectionCandidate(name=str(section_number))
@@ -273,7 +275,6 @@ class Importer:
                     farm.sections.append(created)
                     return
             except Exception:
-                # ignore DB-level errors and fall back to local attach
                 pass
 
             # Fallback: create a domain.Section in-memory and attach it to the farm
@@ -286,16 +287,19 @@ class Importer:
                 # ignore any issues creating the in-memory object
                 pass
 
-        rearing_vvonr = self.throughput_report[mp_throughput_header.rearing_vvvo_number_cell].value
-        fattening_vvonr = self.throughput_report[mp_throughput_header.fattening_vvvo_number_cell].value
-        
+        rearing_vvonr = self.throughput_report[
+            mp_throughput_header.rearing_vvvo_number_cell
+        ].value
+        fattening_vvonr = self.throughput_report[
+            mp_throughput_header.fattening_vvvo_number_cell
+        ].value
 
         if rearing_vvonr == fattening_vvonr:
-             self.excepetion_only_one_farm = True
+            self.excepetion_only_one_farm = True
 
         events = stallkarte.assign_rearing_farm(
-                    resolve_farm(rearing_vvonr, FarmType.REARING)
-                )
+            resolve_farm(rearing_vvonr, FarmType.REARING)
+        )
         if fattening_vvonr:
             events.extend(
                 stallkarte.assign_fattening_farm(
@@ -318,14 +322,20 @@ class Importer:
                 return []
 
             normalized_value = str(value).replace(";", ",")
-            return [part.strip() for part in normalized_value.split(",") if part.strip()]
+            return [
+                part.strip() for part in normalized_value.split(",") if part.strip()
+            ]
 
         for section in self.section_sheet_names:
             ws = self._worksheet(section)
 
             parent_flocks_from_cell = []
-            for parent_flock in split_multi_value_cell(ws[mp_holding.parent_flock].value):
-                parent_flock = re.sub(r"(?i)^\s*stall(?=\s|\d|-|_|$)[\s_-]*","",parent_flock)
+            for parent_flock in split_multi_value_cell(
+                ws[mp_holding.parent_flock].value
+            ):
+                parent_flock = re.sub(
+                    r"(?i)^\s*stall(?=\s|\d|-|_|$)[\s_-]*", "", parent_flock
+                )
                 if parent_flock:
                     parent_flocks_from_cell.append(parent_flock)
 
@@ -333,8 +343,13 @@ class Importer:
                 ws[mp_holding.production_week].value
             )
 
-            if len(production_weeks_from_cell) == 1 and len(parent_flocks_from_cell) > 1:
-                production_weeks_from_cell = production_weeks_from_cell * len(parent_flocks_from_cell)
+            if (
+                len(production_weeks_from_cell) == 1
+                and len(parent_flocks_from_cell) > 1
+            ):
+                production_weeks_from_cell = production_weeks_from_cell * len(
+                    parent_flocks_from_cell
+                )
 
             # Allowed: either exactly one parent flock and one production week,
             # or the same number of parent flocks and production weeks.
@@ -344,19 +359,19 @@ class Importer:
                     and len(production_weeks_from_cell) == 1
                 )
                 or (len(parent_flocks_from_cell) == len(production_weeks_from_cell))
-            ): #TODO: noch sinnvoll?
+            ):  # TODO: noch sinnvoll?
                 raise StallkarteImportError(
                     code="invalid_parent_flock_production_week",
                     message=f"Invalid parent flock / production week configuration in section {ws.title}: "
-                        + f"parent_flocks={len(parent_flocks_from_cell)}, production_weeks={len(production_weeks_from_cell)}",
+                    + f"parent_flocks={len(parent_flocks_from_cell)}, production_weeks={len(production_weeks_from_cell)}",
                     german_display_message=f"Ungültige Konmbintaion von Elterntieren / Produktionswochen in {ws.title}: "
-                        + f"Anzahl der Elterntierherden={len(parent_flocks_from_cell)}, Anzahl der Produktionswochen={len(production_weeks_from_cell)}"
+                    + f"Anzahl der Elterntierherden={len(parent_flocks_from_cell)}, Anzahl der Produktionswochen={len(production_weeks_from_cell)}",
                 )
             first_day_weight_recorded_cell_address: str = (
                 self._find_first_day_weight_recorded_cell_address(section_one_ws)
             )
 
-            initial_animals_count : int | None = ws[mp_holding.animals_count].value
+            initial_animals_count: int | None = ws[mp_holding.animals_count].value
             if initial_animals_count is None:
                 raise StallkarteImportError(
                     code="missing_initial_animals_count",
@@ -400,7 +415,11 @@ class Importer:
     ) -> list[domain.StallkarteEvent]:
         first_section_ws = self._worksheet(self.section_sheet_names[0])
 
-        transfer_date = self._parse_optional_date_cell( self.throughput_report, mp_throughput_header.transfer_date_cell, "transfer_date")
+        transfer_date = self._parse_optional_date_cell(
+            self.throughput_report,
+            mp_throughput_header.transfer_date_cell,
+            "transfer_date",
+        )
         if transfer_date is None:
             transfer_date = self._search_transfer_date()
 
@@ -408,37 +427,41 @@ class Importer:
         transfer_row = None
 
         for row in self.daily_event_rows:
-            if self._read_required_date(first_section_ws, mp_production_days.date + str(row), "date") == transfer_date:
+            if (
+                self._read_required_date(
+                    first_section_ws, mp_production_days.date + str(row), "date"
+                )
+                == transfer_date
+            ):
                 transfer_row = row
-                break 
+                break
         if transfer_row is None:
             raise StallkarteImportError(
                 code="transfer_row_not_found",
                 message=f"Transfer row for date {transfer_date} not found in daily event rows.",
                 german_display_message=f"Die Zeile für die Umstallung am {transfer_date} konnte nicht gefunden werden.",
             )
-        
+
         for section in self.section_sheet_names:
             ws = self._worksheet(section)
             init_animals_count = int(ws[mp_holding.animals_count].value)
-            
+
             animals_on_transfer_date = init_animals_count - int(
-                    ws[mp_production_days.cumulative_mortality + str(transfer_row)].value
-                )
+                ws[mp_production_days.cumulative_mortality + str(transfer_row)].value
+            )
 
             animals_by_section_number[int(self._parse_section_number(ws.title))] = (
                 animals_on_transfer_date
             )
 
         events = stallkarte.transfer_flock(
-            transfer_date = transfer_date,
+            transfer_date=transfer_date,
             animals_by_section_number=animals_by_section_number,
         )
         return events
 
     def _read_checklist_events(
-        self,
-        stallkarte: domain.Stallkarte
+        self, stallkarte: domain.Stallkarte
     ) -> list[domain.StallkarteEvent]:
 
         # assuming checklist values are supposed to be identical across sections
@@ -457,7 +480,7 @@ class Importer:
 
         if (
             self.first_section_ws[mp_checklist.silo_detergent_dosis].value == ""
-            or self.first_section_ws[mp_checklist.silo_detergent_dosis].value == None
+            or self.first_section_ws[mp_checklist.silo_detergent_dosis].value is None
         ):
             silo_detergent_dosis: str | None = None
         else:
@@ -481,7 +504,7 @@ class Importer:
                 "date_hatched",
             )
             clean_silo_date = datetime.date(clean_silo_year.year, 1, 1)
-        elif silo_cleaning_date_value == None or silo_cleaning_date_value == "":
+        elif silo_cleaning_date_value is None or silo_cleaning_date_value == "":
             clean_silo_date = None
         else:
             clean_silo_date = self._parse_date_value(
@@ -502,7 +525,8 @@ class Importer:
 
         if (
             self.first_section_ws[mp_checklist.stable_disinfectant_dosis].value == ""
-            or self.first_section_ws[mp_checklist.stable_disinfectant_dosis].value == None
+            or self.first_section_ws[mp_checklist.stable_disinfectant_dosis].value
+            is None
         ):
             stable_disinfectant_dosis: str | None = None
         else:
@@ -522,14 +546,17 @@ class Importer:
             stallkarte.disinfect_stable(
                 cycle=cycle,
                 date=stable_disinfection_date,
-                disinfectant=self.first_section_ws[mp_checklist.stable_disinfectant].value,
+                disinfectant=self.first_section_ws[
+                    mp_checklist.stable_disinfectant
+                ].value,
                 dosis=stable_disinfectant_dosis,
             )
         )
 
         if (
             self.first_section_ws[mp_checklist.stable_disinfectant_dosis].value == ""
-            or self.first_section_ws[mp_checklist.stable_disinfectant_dosis].value == None
+            or self.first_section_ws[mp_checklist.stable_disinfectant_dosis].value
+            is None
         ):
             water_line_disinfectant_dosis: str | None = None
         else:
@@ -583,25 +610,22 @@ class Importer:
         return events
 
     def _read_daily_events(
-        self,
-        stallkarte: domain.Stallkarte
+        self, stallkarte: domain.Stallkarte
     ) -> list[domain.StallkarteEvent]:
 
         first_section_ws = self._worksheet(self.section_sheet_names[0])
-        outdoor_journal_events: list[domain.StallkarteEvent] = []
+        outdoor_journal_events: list[domain.StallkarteEvent] | None = []
         section_events: list[domain.StallkarteEvent] = []
         current_outdoor_journal_row: int = mp_outdoor_journal_days.first_data_row
-        throughput_report_note_entries: dict[datetime.date, list[models.NoteEntry]] = self._extract_throughput_report_note_entries(self.throughput_report)
+        throughput_report_note_entries: dict[datetime.date, list[models.NoteEntry]] = (
+            self._extract_throughput_report_note_entries(self.throughput_report)
+        )
 
         for row_number in self.daily_event_rows:
             production_day = first_section_ws[
                 mp_production_days.day + str(row_number)
             ].value
-            production_date = self._read_required_date(
-                first_section_ws,
-                mp_production_days.date + str(row_number),
-                "production_date",
-            )
+
             humidity_cell_ref = mp_production_days.humidity + str(row_number)
             humidity_percent = self._parse_optional_percent_cell(
                 first_section_ws,
@@ -652,74 +676,34 @@ class Importer:
                 )
             )
 
-            start_date_outdoor_journal = self.outdoor_journal[
-                mp_outdoor_journal_days.date_column
-                + str(mp_outdoor_journal_days.first_data_row)
-            ].value
+            outdoor_journal_events = self._read_outdoor_journal_events(
+                row_number=row_number,
+                current_outdoor_journal_row=current_outdoor_journal_row,
+                stallkarte=stallkarte,
+            )
 
-            if start_date_outdoor_journal != None or start_date_outdoor_journal != "":
-                if (
-                    first_section_ws[mp_production_days.date + str(row_number)].value
-                    >= start_date_outdoor_journal
-                ):
-                    production_day_outdoor_journal = first_section_ws[
-                        mp_production_days.day + str(row_number)
-                    ].value
-                    veterinarian: bool = (
-                        True
-                        if self.outdoor_journal[
-                            mp_outdoor_journal_days.veterinarian_column
-                            + str(current_outdoor_journal_row)
-                        ].value
-                        in ["x", "xx", "ja", "yes", "1", "true"]
-                        else False
-                    )
-
-                    opening_time_cell_value = str(self.outdoor_journal[
-                        mp_outdoor_journal_days.opening_time_column
-                        + str(current_outdoor_journal_row)
-                    ].value)
-
-                    outdoor_journal_events.extend(
-                        stallkarte.record_fattening_day_data(
-                            production_day=production_day_outdoor_journal,
-                            opening_time=opening_time_cell_value,
-                            weather_conditions=self._determine_weather_conditions(
-                                self.outdoor_journal, current_outdoor_journal_row
-                            ),
-                            veterinarian=veterinarian,
-                        )
-                    )
-                    current_outdoor_journal_row += (
-                        mp_outdoor_journal_days.default_data_row_count
-                    )
-
-            
-            general_note_cell_value = first_section_ws[
-                mp_production_days.annotation + str(row_number)
-            ].value
-            
-            if general_note_cell_value is not None and general_note_cell_value != "":
-                general_notes: list[models.NoteEntry] = self._extract_general_notes(
-                    general_note_cell_value
+            if outdoor_journal_events is not None:
+                section_events.extend(outdoor_journal_events)
+                current_outdoor_journal_row += (
+                    mp_outdoor_journal_days.default_data_row_count
                 )
-            else: general_notes: list[models.NoteEntry] = []
-            merged_notes: list[models.NoteEntry] = []
-            throughput_report_notes = throughput_report_note_entries.get(production_date, [])
-            if throughput_report_notes:
-                merged_notes = self._merge_notes(
-                    general_notes, throughput_report_notes
-                )
-            else: merged_notes = general_notes               
 
-            if merged_notes and len(merged_notes) > 0:
-                section_events.extend(
-                    stallkarte.save_general_notes(
-                        production_day=production_day,
-                        general_notes=merged_notes,
-                    )
-                )
-        
+            production_date = self._read_required_date(
+                first_section_ws,
+                mp_production_days.date + str(row_number),
+                "production_date",
+            )
+            throughput_report_notes: list[models.NoteEntry] | None = (
+                throughput_report_note_entries.get(production_date, [])
+            )
+            general_notes: list[domain.StallkarteEvent] | None = self._read_notes(
+                row_number=row_number,
+                stallkarte=stallkarte,
+                production_day=production_day,
+                throughput_report_notes=throughput_report_notes,
+            )
+            if general_notes is not None:
+                section_events.extend(general_notes)
 
         for section in self.section_sheet_names:
             ws = self._worksheet(section)
@@ -751,14 +735,14 @@ class Importer:
                         shift=MortalityRecordedShift.MORNING,
                     )
                 )
-        section_events.extend(outdoor_journal_events)
+
         return section_events
 
     def _read_finish_events(
         self,
         stallkarte: domain.Stallkarte,
     ) -> list[domain.StallkarteEvent]:
-        
+
         catching_notes: list[models.NoteEntry] = []
         slaughter_notes: list[models.NoteEntry] = []
         for i in range(3):
@@ -768,11 +752,8 @@ class Importer:
             catcher_name = self.throughput_report[
                 mp_throughput_finish_notes.catching_catcher_cells[i]
             ].value
-            if (
-                (catching_time is None
-                and catching_time == "")
-                or (catcher_name is None
-                and catcher_name == "")
+            if (catching_time is None and catching_time == "") or (
+                catcher_name is None and catcher_name == ""
             ):
                 continue
             catching_notes.append(
@@ -783,7 +764,7 @@ class Importer:
                     catcher_name=catcher_name,
                 )
             )
-            
+
         for i in range(3):
             slaughter_row = mp_throughput_finish_notes.slaughter_rows[i]
             slaughter_date = self.throughput_report[
@@ -807,11 +788,8 @@ class Importer:
                     mp_production_days.weight + str(last_weight_row - 1)
                 ].value
 
-            if (
-                (slaughter_date is not None
-                and slaughter_date != "")
-                or (slaughter_animals_count is not None
-                and slaughter_animals_count != "")
+            if (slaughter_date is not None and slaughter_date != "") or (
+                slaughter_animals_count is not None and slaughter_animals_count != ""
             ):
                 continue
             slaughter_notes.append(
@@ -832,8 +810,7 @@ class Importer:
             "slaughter_date",
         )
         events = stallkarte.finish(
-            date=slaughter_date,
-            finish_notes=catching_notes + slaughter_notes
+            date=slaughter_date, finish_notes=catching_notes + slaughter_notes
         )
         return events
 
@@ -940,7 +917,7 @@ class Importer:
                     message=f"{field_name} in {cell_ref} must contain a date.",
                     german_display_message=f"Feld:{field_name} in Zelle: {cell_ref} muss ein Datum sein.",
                 )
-            
+
             for date_format in ("%d.%m.%Y", "%Y-%m-%d"):
                 try:
                     return datetime.datetime.strptime(
@@ -1046,16 +1023,13 @@ class Importer:
 
         return conditions_list
 
-
-
-
     def _match_enum_code(
         self,
         raw_value: str | None,
         enum_cls: Type[StrEnum],
         *,
         use_word_boundary: bool = False,
-    ):
+    ) -> None | StrEnum:
         "Matches a raw text value against the members of a given code enum, such as vaccination codes or treatment codes, and returns the corresponding enum member if a match is found. It normalizes the input, checks for an exact match first, and then optionally falls back to word-boundary or substring matching depending on the code type."
         if raw_value is None:
             return None
@@ -1076,15 +1050,28 @@ class Importer:
 
         return None
 
-    def _extract_throughput_report_note_entries(self, throughput_report: Worksheet) -> dict[datetime.date, list[models.NoteEntry]]:
+    def _extract_throughput_report_note_entries(
+        self, throughput_report: Worksheet
+    ) -> dict[datetime.date, list[models.NoteEntry]]:
         note_entries_by_date = defaultdict(list)
 
         for row in mp_throughput_general_notes.vaccination_rows:
-            delivery_receipt_number = throughput_report[mp_throughput_general_notes.vaccination_delivery_receipt_column + str(row)].value
-            batch_number: str | None = throughput_report[mp_throughput_general_notes.vaccination_batch_number_column + str(row)].value
-            vaccination_code_str = throughput_report[mp_throughput_general_notes.vaccination_code_column + str(row)].value
+            delivery_receipt_number = throughput_report[
+                mp_throughput_general_notes.vaccination_delivery_receipt_column
+                + str(row)
+            ].value
+            batch_number: str | None = throughput_report[
+                mp_throughput_general_notes.vaccination_batch_number_column + str(row)
+            ].value
+            vaccination_code_str = throughput_report[
+                mp_throughput_general_notes.vaccination_code_column + str(row)
+            ].value
 
-            if delivery_receipt_number is None and batch_number is None and vaccination_code_str is None:
+            if (
+                delivery_receipt_number is None
+                and batch_number is None
+                and vaccination_code_str is None
+            ):
                 continue
 
             date = self._read_required_date(
@@ -1093,7 +1080,9 @@ class Importer:
                 "vaccination_date",
             )
 
-            vaccination_code = self._match_enum_code(vaccination_code_str, models.VaccinationCode, use_word_boundary=True)
+            vaccination_code = self._match_enum_code(
+                vaccination_code_str, models.VaccinationCode, use_word_boundary=True
+            )
 
             vacc_entry = models.NoteEntry(
                 id=str(uuid.uuid4()),
@@ -1105,13 +1094,27 @@ class Importer:
             note_entries_by_date[date].append(vacc_entry)
 
         for row in mp_throughput_general_notes.treatment_rows:
-            delivery_receipt_number = throughput_report[mp_throughput_general_notes.treatment_delivery_receipt_column + str(row)].value
-            batch_number: str | None = throughput_report[mp_throughput_general_notes.treatment_batch_number_column + str(row)].value
-            treatment_code_str = throughput_report[mp_throughput_general_notes.treatment_treatment_code_column + str(row)].value
-            treatment_amount_str = throughput_report[mp_throughput_general_notes.treatment_amount_column + str(row)].value
-            treatment_waiting_time = throughput_report[mp_throughput_general_notes.treatment_waiting_time_column + str(row)].value
+            delivery_receipt_number = throughput_report[
+                mp_throughput_general_notes.treatment_delivery_receipt_column + str(row)
+            ].value
+            batch_number: str | None = throughput_report[
+                mp_throughput_general_notes.treatment_batch_number_column + str(row)
+            ].value
+            treatment_code_str = throughput_report[
+                mp_throughput_general_notes.treatment_treatment_code_column + str(row)
+            ].value
+            treatment_amount_str = throughput_report[
+                mp_throughput_general_notes.treatment_amount_column + str(row)
+            ].value
+            treatment_waiting_time = throughput_report[
+                mp_throughput_general_notes.treatment_waiting_time_column + str(row)
+            ].value
 
-            if delivery_receipt_number is None and batch_number is None and treatment_code_str is None:
+            if (
+                delivery_receipt_number is None
+                and batch_number is None
+                and treatment_code_str is None
+            ):
                 continue
 
             treatment_start_date = self._read_required_date(
@@ -1125,12 +1128,16 @@ class Importer:
                 "treatment_end_date",
             )
 
-            treatment_code = self._match_enum_code(treatment_code_str, models.TreatmentCode, use_word_boundary=False)
+            treatment_code = self._match_enum_code(
+                treatment_code_str, models.TreatmentCode, use_word_boundary=False
+            )
 
             treatment_amount_value = None
             treatment_amount_unit = None
             if treatment_amount_str is not None:
-                treatment_amount_value, treatment_amount_unit, _ = extract_treatment_amount_and_text(str(treatment_amount_str))
+                treatment_amount_value, treatment_amount_unit, _ = (
+                    extract_treatment_amount_and_text(str(treatment_amount_str))
+                )
 
             treatment_entry = models.NoteEntry(
                 id=str(uuid.uuid4()),
@@ -1141,13 +1148,17 @@ class Importer:
                 treatment_amount_value=treatment_amount_value,
                 treatment_amount_unit=treatment_amount_unit,
                 treatment_waiting_time_unit=models.WaitingTimeUnit.DAY,  # assuming day default
-                treatment_waiting_time_value=int(treatment_waiting_time) if treatment_waiting_time is not None else None,
+                treatment_waiting_time_value=int(treatment_waiting_time)
+                if treatment_waiting_time is not None
+                else None,
             )
 
             for date in self._daterange(treatment_start_date, treatment_end_date):
                 note_entries_by_date[date].append(treatment_entry.copy())
 
-        sock_test_result = self._read_yes_no(throughput_report, mp_throughput_general_notes.sock_test_result)
+        sock_test_result = self._read_yes_no(
+            throughput_report, mp_throughput_general_notes.sock_test_result
+        )
 
         if sock_test_result is not None:
             sock_test_date = self._parse_optional_date_cell(
@@ -1155,11 +1166,12 @@ class Importer:
                 mp_throughput_general_notes.sock_test_date,
                 "sock_test_date",
             )
-            # defaulting to a the date 10 days before slaughtering if no entry 
+            # defaulting to a the date 10 days before slaughtering if no entry
             if sock_test_date is None:
                 sock_test_date = self._read_required_date(
                     self.first_section_ws,
-                    mp_production_days.date + str(self.daily_event_rows[len(self.daily_event_rows) - 11]),
+                    mp_production_days.date
+                    + str(self.daily_event_rows[len(self.daily_event_rows) - 11]),
                     "sock_test_date",
                 )
 
@@ -1178,13 +1190,17 @@ class Importer:
 
         return dict(note_entries_by_date)
 
-    def _daterange(self, start_date, end_date):
-        dates = []
+    def _daterange(
+        self, start_date: datetime.date, end_date: datetime.date
+    ) -> list[datetime.date]:
+        dates: list[datetime.date] = []
         for n in range((end_date - start_date).days + 1):
             dates.append(start_date + datetime.timedelta(days=n))
         return dates
 
-    def _notes_overlap(self, general_note: models.NoteEntry, throughput_note: models.NoteEntry) -> bool:
+    def _notes_overlap(
+        self, general_note: models.NoteEntry, throughput_note: models.NoteEntry
+    ) -> bool:
         if general_note.note_type != throughput_note.note_type:
             return False
 
@@ -1199,21 +1215,31 @@ class Importer:
 
         return False
 
-    def _merge_note(self, general_note: models.NoteEntry, throughput_note: models.NoteEntry) -> models.NoteEntry:
+    def _merge_note(
+        self, general_note: models.NoteEntry, throughput_note: models.NoteEntry
+    ) -> models.NoteEntry:
         if throughput_note.note_type == models.NoteType.VACCINATION:
             merged_note = general_note.copy()
-            merged_note.delivery_receipt_number = throughput_note.delivery_receipt_number
+            merged_note.delivery_receipt_number = (
+                throughput_note.delivery_receipt_number
+            )
             merged_note.batch_number = throughput_note.batch_number
             return merged_note
 
         if throughput_note.note_type == models.NoteType.TREATMENT:
             merged_note = general_note.copy()
-            merged_note.delivery_receipt_number = throughput_note.delivery_receipt_number
+            merged_note.delivery_receipt_number = (
+                throughput_note.delivery_receipt_number
+            )
             merged_note.batch_number = throughput_note.batch_number
             merged_note.treatment_amount_value = general_note.treatment_amount_value
             merged_note.treatment_amount_unit = general_note.treatment_amount_unit
-            merged_note.treatment_waiting_time_value = throughput_note.treatment_waiting_time_value
-            merged_note.treatment_waiting_time_unit = throughput_note.treatment_waiting_time_unit
+            merged_note.treatment_waiting_time_value = (
+                throughput_note.treatment_waiting_time_value
+            )
+            merged_note.treatment_waiting_time_unit = (
+                throughput_note.treatment_waiting_time_unit
+            )
             return merged_note
 
         if throughput_note.note_type == models.NoteType.SOCK_TEST:
@@ -1221,7 +1247,11 @@ class Importer:
 
         return general_note.copy()
 
-    def _merge_notes(self, general_notes: list[models.NoteEntry], throughput_report_notes: list[models.NoteEntry],) -> list[models.NoteEntry]:
+    def _merge_notes(
+        self,
+        general_notes: list[models.NoteEntry],
+        throughput_report_notes: list[models.NoteEntry],
+    ) -> list[models.NoteEntry]:
         merged_notes: list[models.NoteEntry] = []
         used_general_indices: set[int] = set()
         used_throughput_indices: set[int] = set()
@@ -1253,7 +1283,10 @@ class Importer:
         "Searches for transfer_date in different parts of the Workbook"
         if self.excepetion_only_one_farm:
             transfer_date = self._parse_optional_date_cell(
-                self.outdoor_journal, mp_outdoor_journal_days.date_column + str(mp_outdoor_journal_days.first_data_row), "transfer_date"
+                self.outdoor_journal,
+                mp_outdoor_journal_days.date_column
+                + str(mp_outdoor_journal_days.first_data_row),
+                "transfer_date",
             )
             if transfer_date is not None:
                 return transfer_date
@@ -1263,7 +1296,7 @@ class Importer:
                     message="Transfer date not found in outdoor journal for exception case.",
                     german_display_message="Das Umstallungsdatum konnte für den Sonderfall: 'Gleiche Mast und Aufzuchtsfarm' nicht im Außlaufjournal festgestellt werden.",
                 )
-            
+
         for section in self.section_sheet_names:
             ws = self._worksheet(section)
             transfer_date = self._parse_optional_date_cell(
@@ -1271,8 +1304,8 @@ class Importer:
             )
             if transfer_date is not None:
                 return transfer_date
-            
-        transfer_date = self._find_transfer_date_from_annotations() 
+
+        transfer_date = self._find_transfer_date_from_annotations()
         if transfer_date is not None:
             return transfer_date
         else:
@@ -1289,9 +1322,11 @@ class Importer:
             production_date = self._read_required_date(
                 first_section_ws,
                 mp_production_days.date + str(row_number),
-                "production_date"
+                "production_date",
             )
-            note_value = first_section_ws[mp_production_days.annotation + str(row_number)].value
+            note_value = first_section_ws[
+                mp_production_days.annotation + str(row_number)
+            ].value
             if not note_value:
                 continue
 
@@ -1299,6 +1334,96 @@ class Importer:
             if any(note.note_type == models.NoteType.RELOCATION for note in notes):
                 return production_date
 
-        return None       
-        
+        return None
+
+    def _read_outdoor_journal_events(
+        self,
+        row_number: int,
+        current_outdoor_journal_row: int,
+        stallkarte: domain.Stallkarte,
+    ) -> list[domain.StallkarteEvent] | None:
+        first_section_ws = self._worksheet(self.section_sheet_names[0])
+
+        start_date_outdoor_journal = self.outdoor_journal[
+            mp_outdoor_journal_days.date_column
+            + str(mp_outdoor_journal_days.first_data_row)
+        ].value
+
+        if start_date_outdoor_journal is not None or start_date_outdoor_journal != "":
+            if (
+                first_section_ws[mp_production_days.date + str(row_number)].value
+                >= start_date_outdoor_journal
+            ):
+                production_day_outdoor_journal = first_section_ws[
+                    mp_production_days.day + str(row_number)
+                ].value
+                veterinarian: bool = (
+                    True
+                    if self.outdoor_journal[
+                        mp_outdoor_journal_days.veterinarian_column
+                        + str(current_outdoor_journal_row)
+                    ].value
+                    in ["x", "xx", "ja", "yes", "1", "true"]
+                    else False
+                )
+
+                opening_time_cell_value = str(
+                    self.outdoor_journal[
+                        mp_outdoor_journal_days.opening_time_column
+                        + str(current_outdoor_journal_row)
+                    ].value
+                )
+
+                outdoor_journal_events: list[domain.StallkarteEvent] = (
+                    stallkarte.record_fattening_day_data(
+                        production_day=production_day_outdoor_journal,
+                        opening_time=opening_time_cell_value,
+                        weather_conditions=self._determine_weather_conditions(
+                            self.outdoor_journal, current_outdoor_journal_row
+                        ),
+                        veterinarian=veterinarian,
+                    )
+                )
+                return outdoor_journal_events
+            else:
+                return None
+        else:
+            return None
+
+    def _read_notes(
+        self,
+        row_number: int,
+        stallkarte: domain.Stallkarte,
+        production_day: int,
+        throughput_report_notes: list[models.NoteEntry] | None,
+    ) -> list[domain.StallkarteEvent] | None:
+        first_section_ws = self._worksheet(self.section_sheet_names[0])
+
+        general_note_cell_value = first_section_ws[
+            mp_production_days.annotation + str(row_number)
+        ].value
+
+        if general_note_cell_value is not None and general_note_cell_value != "":
+            general_notes: list[models.NoteEntry] = self._extract_general_notes(
+                general_note_cell_value
+            )
+        else:
+            general_notes: list[models.NoteEntry] = []
+        merged_notes: list[models.NoteEntry] = []
+
+        if throughput_report_notes is not None:
+            merged_notes = self._merge_notes(general_notes, throughput_report_notes)
+        else:
+            merged_notes = general_notes
+
+        if merged_notes and len(merged_notes) > 0:
+            note_events: list[domain.StallkarteEvent] = stallkarte.save_general_notes(
+                production_day=production_day,
+                general_notes=merged_notes,
+            )
+            return note_events
+        else:
+            return None
+
+
 __all__ = ["Importer", "Stallkarte"]

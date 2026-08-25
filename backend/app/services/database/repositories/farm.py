@@ -105,4 +105,3 @@ class FarmRepository(Repository):
             statement = statement.execution_options(include_deleted=True)
         db_farms = self.session.execute(statement).scalars().all()
         return [translate.farm_to_domain(db_farm) for db_farm in db_farms]
-    
