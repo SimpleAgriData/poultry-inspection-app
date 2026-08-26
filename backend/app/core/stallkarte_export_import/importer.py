@@ -3,12 +3,13 @@ from __future__ import annotations
 import datetime
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import BinaryIO, Type
+from typing import Any, BinaryIO, Type, cast
 from pathlib import Path
 from collections import defaultdict
 import re
 import uuid
-
+from collections.abc import Callable
+from typing import TypeVar
 import openpyxl
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
@@ -56,6 +57,8 @@ class Importer:
         self.first_section_ws: Worksheet
         self.outdoor_journal: Worksheet
         self.section_sheet_names: list[str]
+    
+    Number = TypeVar("Number", int, float)
 
     def import_stallkarte(
         self,
@@ -371,7 +374,7 @@ class Importer:
                 self._find_first_day_weight_recorded_cell_address(section_one_ws)
             )
 
-            initial_animals_count: int | None = ws[mp_holding.animals_count].value
+            initial_animals_count = self._read_optional_int(ws, mp_holding.animals_count, "initial_animals_count")
             if initial_animals_count is None:
                 raise StallkarteImportError(
                     code="missing_initial_animals_count",
@@ -390,9 +393,11 @@ class Importer:
                 section_number=self._parse_section_number(ws.title),
                 initial_animals_count=initial_animals_count,
                 # initial weight grams assumed to be first weight entry
-                initial_weight_grams=section_one_ws[
-                    first_day_weight_recorded_cell_address
-                ].value,
+                initial_weight_grams=self._read_required_int(
+                    section_one_ws,
+                    first_day_weight_recorded_cell_address,
+                    "initial_weight_grams"
+                ),
                 bedding=bedding,
                 parent_flocks=[
                     models.ParentFlockEntry(
@@ -444,10 +449,12 @@ class Importer:
 
         for section in self.section_sheet_names:
             ws = self._worksheet(section)
-            init_animals_count = int(ws[mp_holding.animals_count].value)
+            init_animals_count = self._read_required_int(
+                ws, mp_holding.animals_count, "animals_count"
+            )
 
-            animals_on_transfer_date = init_animals_count - int(
-                ws[mp_production_days.cumulative_mortality + str(transfer_row)].value
+            animals_on_transfer_date = init_animals_count - self._read_required_int(
+                ws, mp_production_days.cumulative_mortality + str(transfer_row), "cumulative_mortality"
             )
 
             animals_by_section_number[int(self._parse_section_number(ws.title))] = (
@@ -478,18 +485,14 @@ class Importer:
             ].value,
         )
 
-        if (
-            self.first_section_ws[mp_checklist.silo_detergent_dosis].value == ""
-            or self.first_section_ws[mp_checklist.silo_detergent_dosis].value is None
-        ):
-            silo_detergent_dosis: str | None = None
-        else:
-            silo_detergent_dosis = (
-                self.first_section_ws[mp_checklist.silo_detergent_dosis]
-                .value.strip()
-                .replace("%", "")
-            )
-
+        silo_detergent_dosis = self._parse_optional_percent_cell(
+            self.first_section_ws,
+            mp_checklist.silo_detergent_dosis,
+            return_float=False,
+        )
+        if silo_detergent_dosis is not None:
+            silo_detergent_dosis = str(silo_detergent_dosis)
+       
         # default to first of the year for entry jährlich
         silo_cleaning_date_value = self.first_section_ws[
             mp_checklist.silo_cleaning_date
@@ -522,19 +525,15 @@ class Importer:
                 dosis=silo_detergent_dosis,
             )
         )
-
-        if (
-            self.first_section_ws[mp_checklist.stable_disinfectant_dosis].value == ""
-            or self.first_section_ws[mp_checklist.stable_disinfectant_dosis].value
-            is None
-        ):
-            stable_disinfectant_dosis: str | None = None
-        else:
-            stable_disinfectant_dosis = (
-                self.first_section_ws[mp_checklist.stable_disinfectant_dosis]
-                .value.strip()
-                .replace("%", "")
-            )
+        stable_disinfectant_dosis_cell_ref = mp_checklist.stable_disinfectant_dosis
+        stable_disinfectant_dosis = self._parse_optional_percent_cell(
+            self.first_section_ws,
+            stable_disinfectant_dosis_cell_ref,
+            return_float=False,
+        )
+        if stable_disinfectant_dosis is not None:
+            stable_disinfectant_dosis = str(stable_disinfectant_dosis)
+        
 
         stable_disinfection_date = self._parse_optional_date_cell(
             self.first_section_ws,
@@ -552,19 +551,14 @@ class Importer:
                 dosis=stable_disinfectant_dosis,
             )
         )
-
-        if (
-            self.first_section_ws[mp_checklist.stable_disinfectant_dosis].value == ""
-            or self.first_section_ws[mp_checklist.stable_disinfectant_dosis].value
-            is None
-        ):
-            water_line_disinfectant_dosis: str | None = None
-        else:
-            water_line_disinfectant_dosis = (
-                self.first_section_ws[mp_checklist.stable_disinfectant_dosis]
-                .value.strip()
-                .replace("%", "")
-            )
+        water_line_disinfectant_dosis= self._parse_optional_percent_cell(
+            self.first_section_ws,
+            mp_checklist.water_line_disinfectant_dosis,
+            return_float=False,
+        )
+        if water_line_disinfectant_dosis is not None:
+            water_line_disinfectant_dosis = str(water_line_disinfectant_dosis)
+       
 
         water_line_disinfection_date = self._parse_optional_date_cell(
             self.first_section_ws,
@@ -622,30 +616,45 @@ class Importer:
         )
 
         for row_number in self.daily_event_rows:
-            production_day = first_section_ws[
-                mp_production_days.day + str(row_number)
-            ].value
-
+            production_day = self._read_required_int(
+                first_section_ws,
+                mp_production_days.day + str(row_number),
+                "production_day",
+            )
+            
             humidity_cell_ref = mp_production_days.humidity + str(row_number)
             humidity_percent = self._parse_optional_percent_cell(
                 first_section_ws,
                 humidity_cell_ref,
+                return_float=True
             )
+            if humidity_percent is not None:
+                humidity_percent = float(humidity_percent)
 
+            temperature_cell_ref = mp_production_days.temperature + str(row_number)
+            temperature_celsius = self._read_optional_float(first_section_ws, temperature_cell_ref, "temperature_celsius")
+
+            if temperature_celsius is not None and not isinstance(temperature_celsius, (int, float)):
+                raise StallkarteImportError(
+                    code="invalid_temperature_format",
+                    message=f"Temperature in {temperature_cell_ref} must be a number.",
+                    german_display_message=f"Temperatur in Zelle: {temperature_cell_ref} muss eine Zahl oder leer sein.",
+                )
+            
             section_events.extend(
                 stallkarte.record_ambient_climate(
                     production_day=production_day,
-                    temperature_celsius=first_section_ws[
-                        mp_production_days.temperature + str(row_number)
-                    ].value,
+                    temperature_celsius=temperature_celsius,
                     humidity_percent=humidity_percent,
                 )
             )
 
-            amount_kg = first_section_ws[
-                mp_production_days.feed_consumption + str(row_number)
-            ].value
-            if amount_kg is None or amount_kg == "":
+            amount_kg = self._read_optional_float(
+                first_section_ws,
+                mp_production_days.feed_consumption + str(row_number),
+                "amount_kg",
+            )
+            if amount_kg is None:
                 amount_kg = 0.0
 
             section_events.extend(
@@ -653,10 +662,12 @@ class Importer:
                     production_day=production_day, amount_kg=amount_kg
                 )
             )
-            amount_liters = first_section_ws[
-                mp_production_days.water_consumption + str(row_number)
-            ].value
-            if amount_liters is None or amount_liters == "":
+            amount_liters = self._read_optional_float(
+                first_section_ws,
+                mp_production_days.water_consumption + str(row_number),
+                "amount_liters",
+            )
+            if amount_liters is None:
                 amount_liters = 0.0
 
             section_events.extend(
@@ -664,10 +675,12 @@ class Importer:
                     production_day=production_day, amount_liters=amount_liters
                 )
             )
-            weight_grams = first_section_ws[
-                mp_production_days.weight + str(row_number)
-            ].value
-            if weight_grams is None or weight_grams == "":
+            weight_grams = self._read_optional_float(
+                first_section_ws,
+                mp_production_days.weight + str(row_number),
+                "weight_grams",
+            )
+            if weight_grams is None:
                 weight_grams = 0.0
 
             section_events.extend(
@@ -709,21 +722,19 @@ class Importer:
             ws = self._worksheet(section)
             section_number = self._parse_section_number(ws.title)
             for row_number in self.daily_event_rows:
-                production_day = first_section_ws[
-                    mp_production_days.day + str(row_number)
-                ].value
+                production_day = self._read_required_int(
+                    ws,
+                    mp_production_days.day + str(row_number),
+                    "production_day",
+                )
 
-                natural_deaths: int | None = ws[
-                    mp_production_days.natural_mortality + str(row_number)
-                ].value
-                if natural_deaths is None or natural_deaths == "":
-                    natural_deaths = None
+                natural_deaths: int | None = self._read_optional_int(
+                    ws, mp_production_days.natural_mortality + str(row_number), "natural_deaths"
+                )
 
-                selective_deaths: int | None = ws[
-                    mp_production_days.selective_mortality + str(row_number)
-                ].value
-                if selective_deaths is None or selective_deaths == "":
-                    selective_deaths = None
+                selective_deaths: int | None = self._read_optional_int(
+                    ws, mp_production_days.selective_mortality + str(row_number), "selective_deaths"
+                )
 
                 section_events.extend(
                     stallkarte.record_mortality(
@@ -760,7 +771,7 @@ class Importer:
                 models.NoteEntry(
                     id=str(uuid.uuid4()),
                     note_type=models.NoteType.CATCHING,
-                    catching_time=catching_time,
+                    catching_time=str(catching_time),
                     catcher_name=catcher_name,
                 )
             )
@@ -941,7 +952,9 @@ class Importer:
         self,
         ws: Worksheet,
         cell_ref: str,
-    ) -> float | None:
+        return_float: bool,
+    ) -> float | str | None:
+        "Returns float or None for return_float=True and str or None for return_float=False"
         cell = ws[cell_ref]
         value = cell.value
 
@@ -954,7 +967,9 @@ class Importer:
                 return None
             if stripped_value.endswith("%"):
                 stripped_value = stripped_value[:-1].strip()
-            return float(stripped_value)
+            if return_float:
+                return float(stripped_value)
+            return stripped_value
 
         numeric_value = float(value)
         number_format = str(cell.number_format or "")
@@ -963,13 +978,15 @@ class Importer:
         if "%" in number_format and abs(numeric_value) <= 1:
             return round(numeric_value * 100, 10)
 
-        return numeric_value
+        if return_float:
+            return numeric_value
+        return str(numeric_value)
 
     def _find_first_day_weight_recorded_cell_address(self, ws: Worksheet) -> str:
         for row_number in self.daily_event_rows:
             weight_cell_address = mp_production_days.weight + str(row_number)
-            weight_value = ws[weight_cell_address].value
-            if weight_value is not None and weight_value != "":
+            weight_value = self._read_optional_float(ws, weight_cell_address, "weight")
+            if weight_value is not None:
                 return weight_cell_address
         raise StallkarteImportError(
             code="no_weight_recorded",
@@ -1106,9 +1123,11 @@ class Importer:
             treatment_amount_str = throughput_report[
                 mp_throughput_general_notes.treatment_amount_column + str(row)
             ].value
-            treatment_waiting_time = throughput_report[
-                mp_throughput_general_notes.treatment_waiting_time_column + str(row)
-            ].value
+            treatment_waiting_time = self._read_optional_int(
+                throughput_report,
+                mp_throughput_general_notes.treatment_waiting_time_column + str(row),
+                "treatment_waiting_time"
+            )
 
             if (
                 delivery_receipt_number is None
@@ -1344,19 +1363,26 @@ class Importer:
     ) -> list[domain.StallkarteEvent] | None:
         first_section_ws = self._worksheet(self.section_sheet_names[0])
 
-        start_date_outdoor_journal = self.outdoor_journal[
+        start_date_outdoor_journal = self._read_required_date(
+            self.outdoor_journal,
             mp_outdoor_journal_days.date_column
-            + str(mp_outdoor_journal_days.first_data_row)
-        ].value
-
+            + str(mp_outdoor_journal_days.first_data_row),
+            "start_date_outdoor_journal",
+        )
+        current_production_date = self._read_required_date(
+            first_section_ws,
+            mp_production_days.date + str(row_number),
+            "current_production_date",
+        )
         if start_date_outdoor_journal is not None or start_date_outdoor_journal != "":
             if (
-                first_section_ws[mp_production_days.date + str(row_number)].value
-                >= start_date_outdoor_journal
+                current_production_date >= start_date_outdoor_journal
             ):
-                production_day_outdoor_journal = first_section_ws[
-                    mp_production_days.day + str(row_number)
-                ].value
+                production_day_outdoor_journal = self._read_required_int(
+                    first_section_ws,
+                    mp_production_days.day + str(row_number),
+                    "production_day_outdoor_journal",
+                )
                 veterinarian: bool = (
                     True
                     if self.outdoor_journal[
@@ -1372,7 +1398,7 @@ class Importer:
                         mp_outdoor_journal_days.opening_time_column
                         + str(current_outdoor_journal_row)
                     ].value
-                )
+                )#TODO: correct wrong spelling : ; .
 
                 outdoor_journal_events: list[domain.StallkarteEvent] = (
                     stallkarte.record_fattening_day_data(
@@ -1426,4 +1452,137 @@ class Importer:
             return None
 
 
+    def _normalize_number_value(self, value: Any) -> Any:
+        if not isinstance(value, str):
+            return value
+
+        normalized = value.strip()
+
+        # Deutsche Schreibweise, z. B. "1.234,56" → "1234.56"
+        if "," in normalized and "." in normalized:
+            if normalized.rfind(",") > normalized.rfind("."):
+                return normalized.replace(".", "").replace(",", ".")
+
+            # Englische Schreibweise, z. B. "1,234.56" → "1234.56"
+            return normalized.replace(",", "")
+
+        # Deutsche Dezimalzahl, z. B. "21,5" → "21.5"
+        if "," in normalized:
+            return normalized.replace(",", ".")
+
+        return normalized
+
+    def _read_number(
+        self,
+        ws: Worksheet,
+        cell_ref: str,
+        field_name: str,
+        *,
+        required: bool,
+        converter: Callable[[Any], Number],
+        number_type_name: str,
+    ) -> Number | None:
+        raw_value: Any = ws[cell_ref].value
+        
+        if raw_value is None or raw_value == "":
+            if not required:
+                return None
+
+            raise StallkarteImportError(
+                code="invalid_number_format",
+                message=f"{field_name} in {cell_ref} must contain an {number_type_name}.",
+                german_display_message=(
+                    f"Feld: {field_name} in Zelle: {cell_ref} muss eine Zahl enthalten."
+                ),
+            )
+        
+        value = self._normalize_number_value(raw_value)
+
+        try:
+            return converter(value)
+        except (ValueError, TypeError) as error:
+            expectation = (
+                f"an {number_type_name}"
+                if required
+                else f"an {number_type_name} or empty"
+            )
+
+            raise StallkarteImportError(
+                code="invalid_number_format",
+                message=(
+                    f"{field_name} in {cell_ref} must be {expectation}, "
+                    f"got {type(value).__name__}: {raw_value!r}."
+                ),
+                german_display_message=(
+                    f"Feld: {field_name} in Zelle: {cell_ref} muss eine Zahl"
+                    f"{' oder leer' if not required else ''} sein, aber es wurde "
+                    f"{type(value).__name__}: {raw_value!r} gefunden."
+                ),
+            ) from error
+
+    def _read_required_float(
+        self,
+        ws: Worksheet,
+        cell_ref: str,
+        field_name: str,
+    ) -> float:
+        return cast(
+            float,
+            self._read_number(
+                ws,
+                cell_ref,
+                field_name,
+                required=True,
+                converter=float,
+                number_type_name="float",
+            ),
+    )
+
+
+    def _read_optional_float(
+        self,
+        ws: Worksheet,
+        cell_ref: str,
+        field_name: str,
+    ) -> float | None:
+        return self._read_number(
+            ws, cell_ref, field_name,
+            required=False,
+            converter=float,
+            number_type_name="float",
+        )
+
+
+    def _read_required_int(
+        self,
+        ws: Worksheet,
+        cell_ref: str,
+        field_name: str,
+    ) -> int:
+        return cast(
+            int,
+            self._read_number(
+                ws,
+                cell_ref,
+                field_name,
+                required=True,
+                converter=int,
+                number_type_name="integer",
+            ),
+        )
+
+
+    def _read_optional_int(
+        self,
+        ws: Worksheet,
+        cell_ref: str,
+        field_name: str,
+    ) -> int | None:
+        return self._read_number(
+            ws, cell_ref, field_name,
+            required=False,
+            converter=int,
+            number_type_name="integer",
+        )
+    
 __all__ = ["Importer", "Stallkarte"]

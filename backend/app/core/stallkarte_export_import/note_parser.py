@@ -101,8 +101,14 @@ def _split_on_commas(value: str) -> list[str]:
     if "," not in value:
         return [value]
 
-    fragments = re.split(r"(?<!\d),\s*(?=\d|[A-Za-zÄÖÜäöü<])", value)
-    return [fragment for fragment in fragments if fragment.strip()]
+    pattern = r"""
+        (?<!\d),\s*(?=\d|[A-Za-zÄÖÜäöü<])
+        |
+        (?<=\d),\s*(?=[A-Za-zÄÖÜäöü<])
+    """
+
+    fragments = re.split(pattern, value, flags=re.VERBOSE)
+    return [fragment.strip() for fragment in fragments if fragment.strip()]
 
 
 def _parse_general_note_fragment(fragment: str) -> list[models.NoteEntry]:
@@ -144,11 +150,11 @@ def _parse_general_note_fragment(fragment: str) -> list[models.NoteEntry]:
 
         return _build_vaccination_entries(fragment)
 
-    if _looks_like_feeding(fragment):
-        return [_build_note_entry(models.NoteType.FEEDING, fragment)]
-
     if _contains_treatment_marker(fragment):
         return [_build_treatment_entry(fragment)]
+    
+    if _looks_like_feeding(fragment):
+        return [_build_note_entry(models.NoteType.FEEDING, fragment)]
 
     return [_build_note_entry(models.NoteType.OTHER, fragment)]
 
