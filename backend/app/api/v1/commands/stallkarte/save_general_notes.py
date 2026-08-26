@@ -33,7 +33,7 @@ type ApiGeneralNoteType = Literal[
     "sock_test",
     "other",
 ]
-type ApiVaccinationCode = Literal["nd", "gumboro", "ib"]
+type ApiVaccinationCode = Literal["nd", "gumboro", "ib", "kokzidien"]
 type ApiTreatmentCode = Literal[
     "amproline",
     "pyanosid",
@@ -41,6 +41,21 @@ type ApiTreatmentCode = Literal[
     "phenoxypen_wsp",
     "baytril",
     "lanflox",
+    "amoxicillin",
+    "aviapen",
+    "baycox",
+    "biocillin",
+    "dozuril",
+    "enro_sleecol",
+    "enroxal",
+    "neomycinsulfat",
+    "octacillin",
+    "parofor",
+    "pharmasin",
+    "rhemox_forte",
+    "solomocta",
+    "t_s_sol",
+    "toltra_k",
 ]
 type ApiTreatmentAmountUnit = Literal["l/1000", "g/1000", "ml", "mg", "l", "kg"]
 type ApiWaitingTimeUnit = Literal["day", "week"]

@@ -2,6 +2,7 @@
 
 import { MdAdd, MdEdit } from "react-icons/md";
 import Button from "@/components/button";
+import UploadStallkarteButton from "@/app/stallkarten/uploadButton";
 import GenericLoaderPlaceholder from "@/components/generic-loader-placeholder";
 import { PageLayout } from "@/components/page-layout";
 import PageSection from "@/components/page-section";
@@ -137,6 +138,7 @@ export default function StallkartePage() {
 						>
 							Neue Stallkarte erstellen
 						</Button>
+						<UploadStallkarteButton></UploadStallkarteButton>
 					</div>
 				</PageSection>
 				<PageSection

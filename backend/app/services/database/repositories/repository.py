@@ -10,10 +10,13 @@ class Repository(abc.ABC):
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def _add(self, instance: object) -> None:
+    def _add(self, instance: object, commit: bool = True) -> None:
         self.session.add(instance)
-        self.session.commit()
-        self.session.refresh(instance)
+        self.session.flush()
+
+        if commit:
+            self.session.commit()
+            self.session.refresh(instance)
 
     def _delete(self, instance: object) -> None:
         if isinstance(instance, SoftDeletableMixin):

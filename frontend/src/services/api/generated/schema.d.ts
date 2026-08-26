@@ -164,6 +164,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/import-stallkarte": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Stallkarte
+         * @description Import a Durchgangsbericht excel file
+         */
+        post: operations["Import_Stallkarte_api_v1_import_stallkarte_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/stallkarte/start-stallkarte": {
         parameters: {
             query?: never;
@@ -797,11 +817,16 @@ export interface components {
         /** @enum {string} */
         ApiTreatmentAmountUnit: "l/1000" | "g/1000" | "ml" | "mg" | "l" | "kg";
         /** @enum {string} */
-        ApiTreatmentCode: "amproline" | "pyanosid" | "lincospectin" | "phenoxypen_wsp" | "baytril" | "lanflox";
+        ApiTreatmentCode: "amproline" | "pyanosid" | "lincospectin" | "phenoxypen_wsp" | "baytril" | "lanflox" | "amoxicillin" | "aviapen" | "baycox" | "biocillin" | "dozuril" | "enro_sleecol" | "enroxal" | "neomycinsulfat" | "octacillin" | "parofor" | "pharmasin" | "rhemox_forte" | "solomocta" | "t_s_sol" | "toltra_k";
         /** @enum {string} */
-        ApiVaccinationCode: "nd" | "gumboro" | "ib";
+        ApiVaccinationCode: "nd" | "gumboro" | "ib" | "kokzidien";
         /** @enum {string} */
         ApiWaitingTimeUnit: "day" | "week";
+        /** Body_Import_Stallkarte_api_v1_import_stallkarte_post */
+        Body_Import_Stallkarte_api_v1_import_stallkarte_post: {
+            /** File */
+            file: string;
+        };
         /**
          * FarmType
          * @enum {string}
@@ -1215,12 +1240,12 @@ export interface components {
          * TreatmentCode
          * @enum {string}
          */
-        TreatmentCode: "amproline" | "pyanosid" | "lincospectin" | "phenoxypen_wsp" | "baytril" | "lanflox";
+        TreatmentCode: "amproline" | "pyanosid" | "lincospectin" | "phenoxypen_wsp" | "baytril" | "lanflox" | "amoxicillin" | "aviapen" | "baycox" | "biocillin" | "dozuril" | "enro_sleecol" | "enroxal" | "neomycinsulfat" | "octacillin" | "parofor" | "pharmasin" | "rhemox_forte" | "solomocta" | "t_s_sol" | "toltra_k";
         /**
          * VaccinationCode
          * @enum {string}
          */
-        VaccinationCode: "nd" | "gumboro" | "ib";
+        VaccinationCode: "nd" | "gumboro" | "ib" | "kokzidien";
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -1356,6 +1381,11 @@ export interface components {
         };
         /** ResponseBody */
         app__api__v1__commands__delete_section__ResponseBody: {
+            /** Message */
+            message: string;
+        };
+        /** ResponseBody */
+        app__api__v1__commands__import_stallkarte__ResponseBody: {
             /** Message */
             message: string;
         };
@@ -2436,6 +2466,58 @@ export interface operations {
                 content?: never;
             };
             /** @description Section not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Request body validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Import_Stallkarte_api_v1_import_stallkarte_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_Import_Stallkarte_api_v1_import_stallkarte_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["app__api__v1__commands__import_stallkarte__ResponseBody"];
+                };
+            };
+            /** @description Authentication required or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied to import stallkarte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not found */
             404: {
                 headers: {
                     [name: string]: unknown;

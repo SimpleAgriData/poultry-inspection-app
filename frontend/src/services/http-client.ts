@@ -54,7 +54,7 @@ class HttpClient {
 		this.auth = auth;
 	}
 
-	private async fetch(url: string, isProtected: boolean, options: RequestInit): Promise<Response> {
+	private async fetch(url: string, isProtected: boolean, options: RequestInit, throwOnHttpError = true): Promise<Response> {
 		if (isProtected) {
 			const token = await this.auth.token(false);
 			options.headers = {
@@ -66,7 +66,10 @@ class HttpClient {
 		const response = await fetch(url, options);
 
 		if (!response.ok) {
-			throw await parseErrorResponse(response);
+			if (throwOnHttpError) {
+				throw await parseErrorResponse(response);
+			}
+			return response;
 		}
 
 		this._onSuccessfulResponse.notify(response);
@@ -81,22 +84,27 @@ class HttpClient {
 		});
 	}
 
-	async runCommand<TRes, TReq>(
+	// soley used for stallkarte import, throwing http errors is turned off because the error is used to show why the import has failed in the UI
+	async runCommandRaw<TReq>(
 		url: string,
 		isProtected: boolean,
 		requestBody: TReq,
 		signal: AbortSignal,
-	): Promise<TRes> {
-		const response = await this.fetch(url, isProtected, {
-			method: "POST",
-			headers: {
-				"content-type": "application/json",
-			},
-			body: JSON.stringify(requestBody),
-			signal,
-		});
+	): Promise<Response> {
+		const isFormData = requestBody instanceof FormData;
 
-		return (await response.json()) as TRes;
+		return this.fetch(url, isProtected, {
+			method: "POST",
+			headers: isFormData
+				? {}
+				: {
+					"content-type": "application/json",
+				},
+			body: isFormData
+				? requestBody
+				: JSON.stringify(requestBody),
+			signal,
+		}, false);
 	}
 }
 

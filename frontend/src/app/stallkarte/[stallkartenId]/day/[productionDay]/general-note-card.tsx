@@ -32,6 +32,7 @@ const vaccinationCodeLabels: Record<VaccinationCode, string> = {
 	nd: "ND",
 	gumboro: "Gumboro",
 	ib: "IB",
+	kokzidien: "Kokzidien",
 };
 
 const treatmentCodeLabels: Record<TreatmentCode, string> = {
@@ -41,6 +42,21 @@ const treatmentCodeLabels: Record<TreatmentCode, string> = {
 	phenoxypen_wsp: "Phenoxypen WSP",
 	baytril: "Baytril",
 	lanflox: "Lanflox",
+	amoxicillin: "Amoxicillin",
+	aviapen: "Aviapen",
+	baycox: "Baycox",
+	biocillin: "Biocillin",
+	dozuril: "Dozuril",
+	enro_sleecol: "Enro-Sleecol",
+	enroxal: "Enroxal",
+	neomycinsulfat: "Neomycinsulfat",
+	octacillin: "Octacillin",
+	parofor: "Parofor",
+	pharmasin:"Pharmasin",
+	rhemox_forte: "Rhemox Forte",
+	solomocta: "Solomocta",
+	t_s_sol: "T.S. Sol",
+	toltra_k: "Toltra-K",
 };
 
 const vaccinationCodeOptions: SelectOption<VaccinationCode>[] = VACCINATION_CODES.map((code) => ({

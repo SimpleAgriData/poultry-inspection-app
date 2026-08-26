@@ -81,3 +81,27 @@ class FarmRepository(Repository):
         if db_farm is None:
             return None
         return translate.farm_to_domain(db_farm)
+
+    def get_farm_id_by_vvonr(
+        self, vvvo_number: str | int, include_deleted: bool = False
+    ) -> int | None:
+        if vvvo_number is None:
+            raise ValueError("vvvo_number must be provided")
+
+        normalized_vvvo_number = str(vvvo_number).strip()
+        statement = select(models.Farm.id).where(
+            models.Farm.vvvo_number == normalized_vvvo_number
+        )
+        if include_deleted:
+            statement = statement.execution_options(include_deleted=True)
+        db_farm_id = self.session.execute(statement).scalar_one_or_none()
+        return db_farm_id
+
+    def get_farms_by_holding_id(
+        self, holding_id: int, include_deleted: bool = False
+    ) -> list[domain.Farm]:
+        statement = select(models.Farm).where(models.Farm.holding_id == holding_id)
+        if include_deleted:
+            statement = statement.execution_options(include_deleted=True)
+        db_farms = self.session.execute(statement).scalars().all()
+        return [translate.farm_to_domain(db_farm) for db_farm in db_farms]

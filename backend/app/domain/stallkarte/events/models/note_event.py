@@ -32,6 +32,7 @@ class VaccinationCode(StrEnum):
     ND = "nd"
     GUMBORO = "gumboro"
     IB = "ib"
+    KOKZIDIEN = "kokzidien"
 
 
 class TreatmentCode(StrEnum):
@@ -41,6 +42,21 @@ class TreatmentCode(StrEnum):
     PHENOXYPEN_WSP = "phenoxypen_wsp"
     BAYTRIL = "baytril"
     LANFLOX = "lanflox"
+    AMOXICILLIN = "amoxicillin"
+    AVIAPEN = "aviapen"
+    BAYCOX = "baycox"
+    BIOCILLIN = "biocillin"
+    DOZURIL = "dozuril"
+    ENRO_SLEECOL = "enro_sleecol"
+    ENROXAL = "enroxal"
+    NEOMYCINSULFAT = "neomycinsulfat"
+    OCTACILLIN = "octacillin"
+    PAROFOR = "parofor"
+    PHARMASIN = "pharmasin"
+    RHEMOX_FORTE = "rhemox_forte"
+    SOLOMOCTA = "solomocta"
+    T_S_SOL = "t_s_sol"
+    TOLTRA_K = "toltra_k"
 
 
 class WaitingTimeUnit(StrEnum):

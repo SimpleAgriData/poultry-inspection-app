@@ -12,7 +12,7 @@ from openpyxl.worksheet.cell_range import CellRange
 from openpyxl.worksheet.worksheet import Worksheet
 
 from app import domain
-from app.core.stallkarteexport.mapping import (
+from app.core.stallkarte_export_import.mapping import (
     OutdoorJournalDaysMapping,
     ThroughputReportGeneralNotesMapping,
     QualityReportBioChicksMapping,
