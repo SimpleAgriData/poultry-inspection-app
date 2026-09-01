@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String
+from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.models.mixins import Base
@@ -17,7 +17,7 @@ class AgriculturalHolding(Base):
     name: Mapped[str]
     hatchery: Mapped[str]
     eco_control_number: Mapped[str]
-    breed: Mapped[str]
+    breed: Mapped[str] = mapped_column(ForeignKey("chicken_breed.label"))
     address_street: Mapped[str]
     address_zip: Mapped[str]
     address_city: Mapped[str]

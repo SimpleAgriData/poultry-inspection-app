@@ -3,6 +3,7 @@ from .farm import Farm, FarmType
 from .section import Section
 from .stallkarte import Stallkarte
 from .stallkarte_event import StallkarteEvent
+from .chicken_breed import ChickenBreed
 
 __all__ = [
     "AgriculturalHolding",
@@ -11,4 +12,5 @@ __all__ = [
     "Section",
     "Stallkarte",
     "StallkarteEvent",
+    "ChickenBreed",
 ]

@@ -5,6 +5,7 @@ from .agricultural_holding import (
 from .farm import FarmCandidate, FarmRepository, FarmTypeCandidate
 from .section import SectionCandidate, SectionRepository
 from .stallkarte import StallkarteRepository
+from .chicken_breed import ChickenBreedRepository
 
 __all__ = [
     "AgriculturalHoldingCandidate",
@@ -15,4 +16,5 @@ __all__ = [
     "SectionCandidate",
     "SectionRepository",
     "StallkarteRepository",
+    "ChickenBreedRepository",
 ]

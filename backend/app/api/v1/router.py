@@ -45,6 +45,7 @@ from app.api.v1.queries import (
     find_stallkarte_router,
     ping_router,
     status_router,
+    chicken_breeds_router,
 )
 
 stallkarte_router = APIRouter()
@@ -95,6 +96,7 @@ queries_router.include_router(find_stallkarte_router)
 queries_router.include_router(ping_router)
 queries_router.include_router(status_router)
 queries_router.include_router(export_router)
+queries_router.include_router(chicken_breeds_router)
 
 router = APIRouter(prefix="/api/v1")
 router.include_router(commands_router, tags=["Commands"])

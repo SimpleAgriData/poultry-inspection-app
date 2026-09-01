@@ -5,6 +5,7 @@ from app.services.database.repositories import (
     FarmRepository,
     SectionRepository,
     StallkarteRepository,
+    ChickenBreedRepository
 )
 
 
@@ -15,3 +16,4 @@ class Database:
         self.farm_repository = FarmRepository(session)
         self.section_repository = SectionRepository(session)
         self.stallkarte_repository = StallkarteRepository(session)
+        self.chicken_breed_repository = ChickenBreedRepository(session)

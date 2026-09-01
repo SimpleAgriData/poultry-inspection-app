@@ -12,6 +12,7 @@ import Input from "@/components/input";
 import { useAuth, useHolding } from "@/contexts";
 import { apiService } from "@/services/api";
 import { authService } from "@/services/auth";
+import Select from "@/components/select";
 
 const OnboardingSchema = z.object({
 	holdingName: z.string().min(1, "Betriebsname ist erforderlich").trim(),
@@ -52,6 +53,23 @@ function Onboarding() {
 		hatchery: "",
 		breedName: "",
 	});
+	const [breeds, setBreeds] = useState<string[]>(["Platzhalter"]);
+	const [loadingBreeds, setLoadingBreeds] = useState(true);
+
+	useEffect(() => {
+		const loadBreeds = async () => {
+			try {
+				const response = apiService.client.runQuery("/api/v1/chicken-breeds", { signal: null });
+	
+				const data = (await response).breeds;
+				setBreeds(data);
+			} finally {
+				setLoadingBreeds(false);
+			}
+		};
+
+		void loadBreeds();
+	}, []);
 
 	useEffect(() => {
 		if (holding !== null && holding !== undefined) {
@@ -240,13 +258,12 @@ function Onboarding() {
 							iconLeft={<FaEgg />}
 							required={true}
 						/>
-						<Input
+						<Select
 							label="Tierrasse"
-							placeholder="z.B. Lohmann Brown"
-							type="text"
-							value={data.breedName}
-							onChange={(value) => setData({ ...data, breedName: value })}
-							iconLeft={<GiChicken />}
+							placeholder="Bitte auswählen"
+							value={data.breedName ?? ""}
+							onChange={(value) => setData({ ...data, breedName: value ?? "" })}
+							options={breeds.map((breed) => ({ label: breed, value: breed }))}
 							required={true}
 						/>
 					</div>

@@ -10,6 +10,7 @@ from app.core.config import (
     get_settings,
 )
 from app.db import get_engine
+from app.db import init_database
 from app.db.models.mixins import Base
 from app.router import router
 
@@ -18,10 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 settings = get_settings()
-engine = get_engine(settings.db.url)
 
-
-Base.metadata.create_all(engine)
+init_database(settings)
 
 app = FastAPI(
     title=settings.app.name,

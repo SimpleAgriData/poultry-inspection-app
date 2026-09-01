@@ -4,6 +4,7 @@ from .agriculturalholding import AgriculturalHolding
 from .exception import DomainException as Exception
 from .farm import Farm, FarmType
 from .section import Section
+from .chicken_breed import ChickenBreed
 from .shallow_stallkarte import ShallowStallkarte
 from .stallkarte import (
     Stallkarte,
@@ -61,4 +62,5 @@ __all__ = [
     "StallkarteTransfer",
     "StallkarteWaterLineDisinfected",
     "User",
+    "ChickenBreed",
 ]

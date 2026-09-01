@@ -804,6 +804,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/chicken-breeds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find Chicken Breeds
+         * @description Retrieve a list of chicken breeds for the authenticated user
+         */
+        get: operations["Find_chicken_breeds_api_v1_chicken_breeds_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2041,6 +2061,11 @@ export interface components {
         /** ResponseBody */
         app__api__v1__queries__find_stallkarte__ResponseBody: {
             stallkarte: components["schemas"]["ResponseBodyStallkarte"] | null;
+        };
+        /** ResponseBody */
+        app__api__v1__queries__get_chicken_breeds__ResponseBody: {
+            /** Breeds */
+            breeds: string[];
         };
         /** ResponseBodyFarm */
         app__shared__api__stallkarte_response__ResponseBodyFarm: {
@@ -4130,6 +4155,47 @@ export interface operations {
                 content?: never;
             };
             /** @description Permission denied to access Stallkarte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Request validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Find_chicken_breeds_api_v1_chicken_breeds_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["app__api__v1__queries__get_chicken_breeds__ResponseBody"];
+                };
+            };
+            /** @description Authentication required or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Permission denied to access breeds */
             403: {
                 headers: {
                     [name: string]: unknown;

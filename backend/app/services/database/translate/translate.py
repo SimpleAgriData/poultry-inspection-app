@@ -118,3 +118,12 @@ def shallow_stallkarte_to_domain(
         is_finished=db_stallkarte.is_finished,
         date_finished=stallkarte.state.date_finished,
     )
+
+def chicken_breed_to_domain(
+    db_chicken_breed: models.ChickenBreed,
+) -> domain.ChickenBreed:
+    return domain.ChickenBreed(
+        id=db_chicken_breed.id or 0,
+        label=db_chicken_breed.label,
+        description=db_chicken_breed.description,
+    )
