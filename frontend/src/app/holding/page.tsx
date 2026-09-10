@@ -10,6 +10,7 @@ import PageSection from "@/components/page-section";
 import SubPageLayout from "@/components/sub-page-layout";
 import { useHolding } from "@/contexts";
 import { apiService } from "@/services/api";
+import Select from "@/components/select";
 
 // TODO: This is a duplicate of the onboarding schema. Should be refactored to a shared schema.
 const HoldingSchema = z.object({
@@ -36,6 +37,23 @@ export default function HoldingPage() {
 		breedName: "",
 	});
 	const router = useRouter();
+	const [breeds, setBreeds] = useState<string[]>(["Platzhalter"]);
+	const [loadingBreeds, setLoadingBreeds] = useState(true);
+
+	useEffect(() => {
+		const loadBreeds = async () => {
+			try {
+				const response = apiService.client.runQuery("/api/v1/chicken-breeds", { signal: null });
+
+				const data = (await response).breeds;
+				setBreeds(data);
+			} finally {
+				setLoadingBreeds(false);
+			}
+		};
+
+		void loadBreeds();
+	}, []);
 
 	useEffect(() => {
 		if (holding) {
@@ -145,12 +163,13 @@ export default function HoldingPage() {
 						placeholder="Musterbrüterei"
 						value={formData.hatchery}
 					/>
-					<Input
-						type="text"
-						onChange={(value) => handleInputChange("breedName", value)}
+					<Select
 						label="Tierrasse"
-						placeholder="Muster-Rasse"
-						value={formData.breedName}
+						placeholder="Bitte auswählen"
+						value={formData.breedName ?? ""}
+						onChange={(value) => handleInputChange("breedName", value)}
+						options={breeds.map((breed) => ({ label: breed, value: breed }))}
+						required={true}
 					/>
 				</PageSection>
 			</BasicForm>
